@@ -31,12 +31,12 @@ func newLogList() *doubleList {
 
 // Insert 节点新增一个OffsetAB.
 func (d *doubleList) Insert(bLen uint32, ab OffsetAB) {
-	if element, ok := d.Find(bLen); ok {
+	d.mux.Lock()
+	defer d.mux.Unlock()
+	if element, ok := d.find(bLen); ok {
 		element.offsetABs = append(element.offsetABs, ab)
 		return
 	}
-	d.mux.Lock()
-	defer d.mux.Unlock()
 	defer func() {
 		if d.cap > 0 && d.length > d.cap {
 			if first := d.first; first != nil {
@@ -116,11 +116,16 @@ func (d *doubleList) Insert(bLen uint32, ab OffsetAB) {
 func (d *doubleList) Find(bLen uint32) (*Node, bool) {
 	d.mux.RLock()
 	defer d.mux.RUnlock()
+	return d.find(bLen)
+}
+func (d *doubleList) find(bLen uint32) (*Node, bool) {
+
 	element := d.first
 	if element == nil {
 		return nil, false
 	}
 	for element != nil {
+		// TODO dead loop??
 		if element.bLen == bLen {
 			return element, true
 		}
