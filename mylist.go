@@ -112,14 +112,13 @@ func (d *doubleList) Insert(bLen uint32, ab OffsetAB) {
 	return
 }
 
-// Find 通过tid查找节点 返回最小的节点. true,存在, false 节点不存在.
+// Find 通过bLen查找比当前空位最小多的那个 true,存在, false 节点不存在.
 func (d *doubleList) Find(bLen uint32) (*Node, bool) {
 	d.mux.RLock()
 	defer d.mux.RUnlock()
 	return d.find(bLen)
 }
 func (d *doubleList) find(bLen uint32) (*Node, bool) {
-
 	element := d.first
 	if element == nil {
 		return nil, false
@@ -146,7 +145,7 @@ func (d *doubleList) del(ele *Node) {
 		return
 	}
 	pre := ele.prev
-	next := ele.prev
+	next := ele.next // bug fix next:= ele.prev
 	if pre != nil {
 		pre.next = next
 	}
@@ -157,10 +156,10 @@ func (d *doubleList) del(ele *Node) {
 	return
 }
 
-// Pop 通过tid查找节点 返回最小的节点. true,存在, false 节点不存在.
+// Pop 通过bLen查找节点 返回最小的节点. true,存在, false 节点不存在.
 func (d *doubleList) Pop(bLen uint32) (OffsetAB, bool) {
-	d.mux.RLock()
-	defer d.mux.RUnlock()
+	d.mux.Lock()
+	defer d.mux.Unlock()
 	element := d.first
 	if element == nil {
 		return OffsetAB{}, false
@@ -195,7 +194,7 @@ func (d *doubleList) Cap() int {
 	return d.cap
 }
 
-func (n *Node) Tid() uint32 {
+func (n *Node) BLen() uint32 {
 	if n == nil {
 		return 0
 	}
